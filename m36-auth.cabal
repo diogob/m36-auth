@@ -24,16 +24,19 @@ library
                      , containers
                      , binary
                      , deepseq
+                     , text
+                     , time
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings, NoImplicitPrelude
 
-executable m36-auth-exe
+executable m36-auth
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , m36-auth
                      , protolude >= 0.1.6 && < 0.2
+                     , project-m36
   default-language:    Haskell2010
   default-extensions:  OverloadedStrings, NoImplicitPrelude
 
