@@ -53,8 +53,7 @@ createSchema sessionId conn = do
 
   --gather up and execute all database updates
   putStrLn ("load relvars" :: Text)
-  _ <- handleIOErrors $ mapM (executeDatabaseContextExpr sessionId conn) (new_adts ++ rvExprs ++ incDepKeys)
-  pure ()
+  void $ handleIOErrors $ mapM (executeDatabaseContextExpr sessionId conn) (new_adts ++ rvExprs ++ incDepKeys)
 
 insertSampleData :: SessionId -> Connection ->  IO ()
 insertSampleData sessionId conn = do
