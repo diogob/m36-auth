@@ -14,7 +14,6 @@ module Lib
     ) where
 
 import ProjectM36.Client
-import ProjectM36.DataTypes.Primitive
 import ProjectM36.Tupleable
 import ProjectM36.Relation
 import ProjectM36.Error
@@ -22,7 +21,6 @@ import Data.Either
 import GHC.Generics
 import Data.Binary
 import Control.DeepSeq
-import qualified Data.Text as T
 import Data.Time.Calendar
 
 import Lib.Prelude
@@ -60,8 +58,6 @@ createSchema sessionId conn = do
 
 insertSampleData :: SessionId -> Connection ->  IO ()
 insertSampleData sessionId conn = do
-  --insert a bunch of records
-  putStrLn ("load data" :: Text)
   let properties = [ User { name = "Active User"
                           , email = "active@email.com"
                           , address = "123 Main St."
@@ -73,25 +69,28 @@ insertSampleData sessionId conn = do
                           , accountState = InactiveSince $ fromGregorian 2017 4 3
                           , dateRegistered = fromGregorian 2016 4 3}
                   ]
+      addNotification = AddNotification "userChange" (RelationVariable "user" ()) (RelationVariable "user" ())
+
+  -- add notification on user insert
+  handleIOError $ executeDatabaseContextExpr sessionId conn addNotification
+
+  --insert a bunch of records
+  putStrLn ("load data" :: Text)
   insertPropertiesExpr <- handleError $ toInsertExpr properties "user"
   handleIOError $ executeDatabaseContextExpr sessionId conn insertPropertiesExpr
+  handleIOError $ executeGraphExpr sessionId conn Commit
 
   --query some records, marshal them back to Haskell
-
   properties' <- handleIOError $ executeRelationalExpr sessionId conn (RelationVariable "user" ())
 
   props <- toList properties' >>= mapM (handleError . fromTuple) :: IO [User]
   print props
 
 handleError :: Either RelationalError a -> IO a
-handleError eErr = case eErr of
-    Left err -> print err >> panic "Died due to errors."
-    Right v -> pure v
+handleError = either (\err -> print err >> panic "Died due to errors.") pure
 
 handleIOError :: IO (Either RelationalError a) -> IO a
-handleIOError m = do
-  e <- m
-  handleError e
+handleIOError m = m >>= handleError
 
 handleIOErrors :: IO [Either RelationalError a] -> IO [a]
 handleIOErrors m = do
